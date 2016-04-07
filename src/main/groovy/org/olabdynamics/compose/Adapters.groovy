@@ -1,0 +1,45 @@
+package org.olabdynamics.compose
+
+import groovy.transform.ToString;
+
+enum UnidirectionalAdapter{
+	File,
+	HTTP,
+	FTP,
+	SFTP,
+	Feed,
+	Stream,
+	SQL,
+	NoSQL,
+	Mail,
+	UDP,
+	TCP,
+	AMQP,
+	MQTT,
+	WebSocket
+}
+
+enum BidirectionalAdapter{
+	AMQP,
+	WebService,
+	JavaApplication
+}
+
+@ToString
+class FileAdapter{
+	def adapter = UnidirectionalAdapter.File
+	def directory
+}
+
+@ToString
+class WebServiceAdapter{
+	def adapter = BidirectionalAdapter.WebService
+	def wsdl
+}
+
+@ToString
+class JavaServiceAdapter{
+	def adapter = BidirectionalAdapter.JavaApplication
+	def javaClass 
+	def method
+}
