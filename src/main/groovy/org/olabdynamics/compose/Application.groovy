@@ -1,7 +1,5 @@
 package org.olabdynamics.compose
 
-import org.olabdynamics.compose.customize.Image;
-
 import groovy.transform.ToString
 import groovy.transform.AutoClone
 
