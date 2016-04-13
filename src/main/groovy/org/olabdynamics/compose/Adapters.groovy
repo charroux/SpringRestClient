@@ -38,6 +38,16 @@ class WebServiceAdapter{
 }
 
 @ToString
+class HttpWebServiceAdapter{
+	
+	enum Method { GET, PUT }
+	
+	def adapter = UnidirectionalAdapter.HTTP
+	def url
+	def method
+}
+
+@ToString
 class JavaServiceAdapter{
 	def adapter = BidirectionalAdapter.JavaApplication
 	def javaClass 
