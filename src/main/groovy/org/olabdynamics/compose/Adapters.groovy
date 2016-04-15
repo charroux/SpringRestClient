@@ -40,7 +40,7 @@ class WebServiceAdapter{
 @ToString
 class HttpWebServiceAdapter{
 	
-	enum Method { GET, PUT }
+	enum Method { GET, PUT, POST }
 	
 	def adapter = UnidirectionalAdapter.HTTP
 	def url
