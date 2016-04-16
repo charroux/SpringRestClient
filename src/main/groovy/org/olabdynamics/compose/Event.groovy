@@ -5,10 +5,15 @@ import groovy.transform.ToString;
 @ToString
 class Event {
 	
+	Direction direction
 	def name
-	
-	Input input		// une seule input mais qui peut contenir plusieurs messages
-	Output output	// une seule output mais qui peut contenir plusieurs messages
+	def type	// mime ou class ou application Compose (pas de type primitif style int car aucun sens dans approche métier)
+	def value	// souvent jsons ou image...
+	def adapter
 
+}
 
+enum Direction{
+	InComing,
+	OutGoing
 }
