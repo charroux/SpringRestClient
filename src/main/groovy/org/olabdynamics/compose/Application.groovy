@@ -25,29 +25,3 @@ enum State{
 	RUNNING
 }
 
-@ToString
-class Input{
-	def type	// mime ou class ou application Compose (pas de type primitif style int car aucun sens dans approche métier)
-	def value	// souvent jsons ou image...
-	def adapter
-}
-
-@ToString
-class Output{
-	def type	// mime ou class ou application Compose (pas de type primitif style int car aucun sens dans approche métier)
-	def value	
-	def adapter
-}
-
-class Result implements Comparable<Result>{
-	
-	def value
-
-	@Override
-	public int compareTo(Result result) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-	
-}
-
