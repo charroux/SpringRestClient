@@ -3,6 +3,7 @@ package org.olabdynamics.compose
 import groovy.transform.ToString;
 
 enum UnidirectionalAdapter{
+	Logging,
 	File,
 	HTTP,
 	FTP,
@@ -52,4 +53,13 @@ class JavaServiceAdapter{
 	def adapter = BidirectionalAdapter.JavaApplication
 	def javaClass 
 	def method
+}
+
+@ToString
+class LoggingAdapter{
+	
+	enum Level { INFO }
+	
+	def adapter = UnidirectionalAdapter.Logging
+	def level = Level.INFO
 }
