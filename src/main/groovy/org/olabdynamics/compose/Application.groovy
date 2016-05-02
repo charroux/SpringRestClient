@@ -24,7 +24,7 @@ class Application {
 @ToString
 class Input{
 	def mimeType	// mime type comme application/json
-	def type 		// optionnel : class ou application Compose (pas de type primitif style int car aucun sens dans approche métier)
+	def type 		// class ou application Compose (pas de type primitif style int car aucun sens dans approche métier)
 	def value		// souvent jsons ou image...
 	def adapter
 }
@@ -32,7 +32,7 @@ class Input{
 @ToString
 class Output{
 	def mimeType	// mime type comme application/json
-	def type 		// optionnel : class ou application Compose (pas de type primitif style int car aucun sens dans approche métier)
+	def type 		// class ou application Compose (pas de type primitif style int car aucun sens dans approche métier)
 	def value
 	def adapter
 }

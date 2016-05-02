@@ -8,7 +8,7 @@ class Event {
 	Direction direction
 	def name
 	def mimeType	// mime type comme application/json
-	def type		// optionnel : class ou application Compose (pas de type primitif style int car aucun sens dans approche métier)
+	def type		// class ou application Compose (pas de type primitif style int car aucun sens dans approche métier)
 	def value		// souvent jsons ou image...
 	def adapter
 
