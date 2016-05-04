@@ -5,7 +5,6 @@ import groovy.transform.ToString;
 enum UnidirectionalAdapter{
 	Logging,
 	File,
-	HTTP,
 	FTP,
 	SFTP,
 	Feed,
@@ -21,6 +20,7 @@ enum UnidirectionalAdapter{
 }
 
 enum BidirectionalAdapter{
+	HTTP,
 	AMQP,
 	WebService,
 	JavaApplication
@@ -39,11 +39,11 @@ class WebServiceAdapter{
 }
 
 @ToString
-class HttpWebServiceAdapter{
+class HttpAdapter{
 	
 	enum Method { GET, PUT, POST }
 	
-	def adapter = UnidirectionalAdapter.HTTP
+	def adapter = BidirectionalAdapter.HTTP
 	def url
 	def method
 }
