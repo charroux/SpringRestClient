@@ -1,0 +1,183 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:int-http="http://www.springframework.org/schema/integration/http"
+       xmlns:int-groovy="http://www.springframework.org/schema/integration/groovy"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xmlns:int-jdbc="http://www.springframework.org/schema/integration/jdbc"
+       xmlns:int-event="http://www.springframework.org/schema/integration/event"
+       xmlns:int-script="http://www.springframework.org/schema/integration/scripting"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context 
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/integration
+           http://www.springframework.org/schema/integration/spring-integration-4.2.xsd
+           http://www.springframework.org/schema/integration/http
+    	   http://www.springframework.org/schema/integration/http/spring-integration-http-4.2.xsd
+           http://www.springframework.org/schema/integration/groovy
+           http://www.springframework.org/schema/integration/groovy/spring-integration-groovy-4.2.xsd
+           http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd
+           http://www.springframework.org/schema/integration/jdbc http://www.springframework.org/schema/integration/jdbc/spring-integration-jdbc-4.2.xsd
+		   http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-4.2.xsd
+		   http://www.springframework.org/schema/integration/event http://www.springframework.org/schema/integration/event/spring-integration-event-4.2.xsd
+		   http://www.springframework.org/schema/integration/scripting
+           http://www.springframework.org/schema/integration/scripting/spring-integration-scripting-4.2.xsd"> 
+
+
+<!-- 	<int:gateway id="qosGateway" default-request-channel="qosGatewayChannel" service-interface="orchestrator.qos.QoSGateway"/>
+	
+	<int:channel id="qosGatewayChannel" />
+	
+	<int:logging-channel-adapter 
+		channel="qosGatewayChannel"
+		level="INFO" /> -->
+		
+		
+	<int-event:inbound-channel-adapter channel="eventChannel"
+			event-types="org.olabdynamics.compose.controlbus.ServiceEvent"/>
+			
+<!-- , org.springframework.context.event.ContextRefreshedEvent -->			
+<!-- 	<int:logging-channel-adapter log-full-message="true" 
+		channel="eventChannel"
+		level="INFO" /> -->
+		
+	<int:recipient-list-router input-channel="eventChannel">
+	    <int:recipient channel="persistMessageChannel" selector-expression="payload.state == T(org.olabdynamics.compose.controlbus.ServiceEvent.State).INCOMING_MESSAGE"/>
+	    <int:recipient channel="acknowledgeMessageChannel" selector-expression="payload.state == T(org.olabdynamics.compose.controlbus.ServiceEvent.State).OUTGOING_MESSAGE"/>
+	    <int:recipient channel="serviceReInitializedChannel" selector-expression="payload.state == T(org.olabdynamics.compose.controlbus.ServiceEvent.State).SERVICE_REINITIALIZED"/>
+	</int:recipient-list-router>
+	
+ 	<int:service-activator input-channel="serviceReInitializedChannel" 
+		expression="@session.setSessionNumber(payload)"/>
+
+	<bean id="session" class="orchestrator.qos.Session"/> 
+	
+<!-- 	<int:channel id="serviceReInitializedChannel" />
+	
+	<int:logging-channel-adapter log-full-message="true" 
+		channel="serviceReInitializedChannel"
+		level="INFO" />  -->
+		
+		
+	
+
+	<int:transformer input-channel="persistMessageChannel" output-channel="persistentChannel">
+		<int-script:script lang="groovy" location="#{createPersistentMessage.input.adapter.file}" />
+	</int:transformer>
+	
+	
+	<int:transformer input-channel="acknowledgeMessageChannel" output-channel="acknowledgeChannel">
+		<int-script:script lang="groovy" location="#{createAcknowledgeMessage.input.adapter.file}" />
+	</int:transformer>
+
+    
+    
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+	    <property name="driverClassName" value="#{messagePersistenceDataBase.dataSource.driver}"/>
+	    <property name="url" value="#{messagePersistenceDataBase.dataSource.url}"/>
+	    <property name="username" value="#{messagePersistenceDataBase.dataSource.username}"/>
+	    <property name="password" value="#{messagePersistenceDataBase.dataSource.password}"/>
+	</bean>
+	
+	
+	
+	<int:channel id="persistentChannel" />    	
+    	
+    <int-jdbc:outbound-channel-adapter data-source="dataSource" channel="persistentChannel" 
+	    query="insert into MESSAGES (MESSAGE_ID,PAYLOAD,CREATED_DATE,SESSION_NUMBER,ACKNOWLEDGEMENT) values (:id, :payload, :createdDate, :sessionNumber, :ack)"
+	    sql-parameter-source-factory="persitSpelSource"/>
+	
+	<bean id="persitSpelSource"
+	      class="org.springframework.integration.jdbc.ExpressionEvaluatingSqlParameterSourceFactory">
+	    <property name="parameterExpressions">
+	        <map>
+	            <entry key="id"          value="payload.messageID"/>
+	            <entry key="createdDate" value="payload.createdDate"/>
+	            <entry key="payload"     value="payload.message"/>
+	            <entry key="sessionNumber"     value="payload.sessionNumber"/>
+	            <entry key="ack"     value="payload.acknowledgement"/>
+	        </map>
+	    </property>
+	</bean>
+ 
+	
+	
+	<int:channel id="acknowledgeChannel" />  
+	
+	<int-jdbc:outbound-channel-adapter data-source="dataSource" channel="acknowledgeChannel" 
+	    query="update MESSAGES set ACKNOWLEDGEMENT=true where MESSAGE_ID = :id"
+	    sql-parameter-source-factory="ackowledgeSpelSource"/>
+	
+	<bean id="ackowledgeSpelSource"
+	      class="org.springframework.integration.jdbc.ExpressionEvaluatingSqlParameterSourceFactory">
+	    <property name="parameterExpressions">
+	        <map>
+	            <entry key="id"          value="payload"/>
+	        </map>
+	    </property>
+	</bean>
+	
+
+	
+	
+	
+	<int-jdbc:inbound-channel-adapter 
+		query="select * from MESSAGES where :sn>SESSION_NUMBER and ACKNOWLEDGEMENT=false"
+		select-sql-parameter-source="restoreMessagesParameterSource"
+		channel="restartChannel"
+		data-source="dataSource"
+		max-rows-per-poll="10"
+		update="delete from MESSAGES where MESSAGE_ID in (:MESSAGE_ID)" >
+			<int:poller fixed-delay="100" />
+	</int-jdbc:inbound-channel-adapter>
+	
+	<bean id="restoreMessagesParameterSource" factory-bean="parameterSourceFactory"
+			factory-method="createParameterSourceNoCache">
+		<constructor-arg value="" />
+	</bean>
+	
+	<bean id="parameterSourceFactory"
+			class="org.springframework.integration.jdbc.ExpressionEvaluatingSqlParameterSourceFactory">
+		<property name="parameterExpressions">
+			<map>
+				<entry key="sn" value="@session.getSessionNumber()" />
+			</map>
+		</property>
+	</bean>
+
+	
+	<int:splitter input-channel="restartChannel" output-channel="restartQueueChannel" ref="splitterBean" method="split" />
+	
+	<bean id="splitterBean" class="orchestrator.SplitterBean"/>
+	
+	<int:channel id="restartQueueChannel">
+		<int:queue/>
+	</int:channel>
+
+	<int:object-to-json-transformer input-channel="restartQueueChannel" output-channel="restartHttpChannel">
+		<int:poller fixed-delay="100" />
+	</int:object-to-json-transformer>  
+
+<!-- 		
+	 <int:channel id="restartChannel1" />
+	
+	<int:logging-channel-adapter log-full-message="true" 
+		channel="restartChannel1"
+		level="INFO" /> -->
+		
+		
+	<int-http:outbound-gateway 
+	    request-channel="restartHttpChannel"
+	    url="http://localhost:8181/orchestratorEventUrl"
+	    http-method="PUT"
+	    reply-channel="nullChannel">
+	</int-http:outbound-gateway> 
+    
+<!-- 	<jdbc:embedded-database id="dataSource" type="H2">
+        <jdbc:script location="classpath:schema-hsql.sql"/>        
+    </jdbc:embedded-database>   -->
+	
+</beans>
